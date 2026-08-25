@@ -1,0 +1,275 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------ *
+ * Design tokens
+ * Two palettes — "studio dark" (default) and "paper light". Semantic
+ * names only; no component reaches for a raw hex.
+ * ------------------------------------------------------------------ */
+:root {
+  --c-bg: #f4f3ef;
+  --c-bg-deep: #eae8e1;
+  --c-panel: #ffffff;
+  --c-panel-2: #faf9f6;
+  --c-panel-3: #f0eee8;
+  --c-line: rgb(20 22 26 / 0.1);
+  --c-line-strong: rgb(20 22 26 / 0.18);
+  --c-fg: #14161a;
+  --c-fg-muted: #5c6270;
+  --c-fg-faint: #8b909c;
+
+  /* Deep olive-lime: the bright lime used in dark mode only reaches
+     1.68:1 on white, which fails as a chart mark and as a button fill.
+     This step clears 3:1 on white and stays separable from amber/rose
+     under protanopia. */
+  --c-accent: #557000;
+  --c-accent-soft: #edf6cd;
+  --c-accent-fg: #3f5400;
+  --c-on-accent: #ffffff;
+
+  --c-violet: #7c3aed;
+  --c-cyan: #0891b2;
+  --c-amber: #d97706;
+  --c-rose: #e11d48;
+  --c-emerald: #059669;
+  --c-slate: #64748b;
+
+  --c-shadow: 20 22 26;
+  --shadow-soft: 0 1px 2px rgb(var(--c-shadow) / 0.06), 0 8px 24px -12px rgb(var(--c-shadow) / 0.14);
+  --shadow-lift: 0 2px 4px rgb(var(--c-shadow) / 0.06), 0 18px 48px -18px rgb(var(--c-shadow) / 0.22);
+  --grain-opacity: 0.025;
+}
+
+.dark {
+  --c-bg: #0a0b0d;
+  --c-bg-deep: #070809;
+  --c-panel: #101216;
+  --c-panel-2: #16191f;
+  --c-panel-3: #1e222a;
+  --c-line: rgb(255 255 255 / 0.08);
+  --c-line-strong: rgb(255 255 255 / 0.16);
+  --c-fg: #e9ebee;
+  --c-fg-muted: #99a0ad;
+  --c-fg-faint: #6a7280;
+
+  --c-accent: #ccff3d;
+  --c-accent-soft: #24310a;
+  --c-accent-fg: #ccff3d;
+  --c-on-accent: #0a0b0d;
+
+  --c-violet: #a78bfa;
+  --c-cyan: #22d3ee;
+  --c-amber: #fbbf24;
+  --c-rose: #fb7185;
+  --c-emerald: #34d399;
+  --c-slate: #94a3b8;
+
+  --c-shadow: 0 0 0;
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.4), 0 24px 56px -20px rgb(0 0 0 / 0.75);
+  --grain-opacity: 0.04;
+}
+
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-bg-deep: var(--c-bg-deep);
+  --color-panel: var(--c-panel);
+  --color-panel-2: var(--c-panel-2);
+  --color-panel-3: var(--c-panel-3);
+  --color-line: var(--c-line);
+  --color-line-strong: var(--c-line-strong);
+  --color-fg: var(--c-fg);
+  --color-fg-muted: var(--c-fg-muted);
+  --color-fg-faint: var(--c-fg-faint);
+  --color-accent: var(--c-accent);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-accent-fg: var(--c-accent-fg);
+  --color-on-accent: var(--c-on-accent);
+  --color-violet: var(--c-violet);
+  --color-cyan: var(--c-cyan);
+  --color-amber: var(--c-amber);
+  --color-rose: var(--c-rose);
+  --color-emerald: var(--c-emerald);
+  --color-slate: var(--c-slate);
+
+  --font-display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+
+  --radius-card: 18px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Base
+ * ------------------------------------------------------------------ */
+@layer base {
+  * {
+    border-color: var(--c-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--c-bg);
+    color: var(--c-fg);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+
+  ::selection {
+    background: var(--c-accent);
+    color: var(--c-on-accent);
+  }
+
+  button, input, textarea, select {
+    font: inherit;
+    color: inherit;
+  }
+
+  input, textarea {
+    background: transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Scrollbars — thin, on-brand, out of the way. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--c-line-strong) transparent;
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--c-line-strong);
+    border-radius: 99px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--c-fg-faint); background-clip: content-box; }
+}
+
+/* ------------------------------------------------------------------ *
+ * Utilities
+ * ------------------------------------------------------------------ */
+@utility panel {
+  background-color: var(--c-panel);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-card);
+}
+
+@utility hairline {
+  border: 1px solid var(--c-line);
+}
+
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+@utility text-balance-tight {
+  text-wrap: balance;
+}
+
+/* A faint film grain that keeps large dark surfaces from looking flat. */
+@utility grain {
+  position: relative;
+  isolation: isolate;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+/* Masks a scroll container's edges so content fades rather than clips. */
+@utility fade-y {
+  mask-image: linear-gradient(to bottom, transparent, black 12px, black calc(100% - 12px), transparent);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+/* ------------------------------------------------------------------ *
+ * Keyframes
+ * ------------------------------------------------------------------ */
+@keyframes flow-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.86); }
+}
+
+@keyframes flow-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(220%); }
+}
+
+@keyframes flow-bar {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes flow-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-pulse-dot { animation: flow-pulse 1.8s ease-in-out infinite; }
+.animate-rise { animation: flow-rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Shimmer used by skeletons. */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, var(--c-line), transparent);
+  animation: flow-sweep 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Honour the in-app "reduce motion" preference too, not just the OS one. */
+html[data-motion='reduced'] *,
+html[data-motion='reduced'] *::before,
+html[data-motion='reduced'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
