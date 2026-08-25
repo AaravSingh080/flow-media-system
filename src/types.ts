@@ -166,6 +166,12 @@ export interface Preferences {
   reduceMotion: boolean
   density: 'comfortable' | 'compact'
   boardMode: 'board' | 'list' | 'timeline'
+  /** Toast the moment work lands, even mid-task. */
+  liveAlerts: boolean
+  /** OS-level notification when the tab is in the background. */
+  desktopAlerts: boolean
+  /** Short synthesised chime on arrival. */
+  soundAlerts: boolean
 }
 
 export interface AppState {

@@ -1,5 +1,6 @@
-import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
-import { Check, ChevronDown } from 'lucide-react'
+import { forwardRef, useId, useRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { fromLocalInput, toLocalInput } from '@/lib/format'
+import { CalendarDays, Check, ChevronDown } from 'lucide-react'
 import { cn } from './cn'
 
 const CONTROL =
@@ -101,6 +102,77 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
     </div>
   )
 })
+
+/**
+ * Date + time entry.
+ *
+ * The field stays a real `datetime-local`, so typing and the OS picker
+ * both work — but Chromium's own calendar button is removed (see
+ * index.css) because it renders near-black whatever the theme says.
+ * This draws the trigger instead.
+ */
+export function DateTimeField({
+  label,
+  hint,
+  value,
+  onChange,
+  invalid,
+  min,
+}: {
+  label: string
+  hint?: string
+  value: number
+  onChange: (ts: number) => void
+  invalid?: boolean
+  min?: number
+}) {
+  const id = useId()
+  const ref = useRef<HTMLInputElement>(null)
+
+  const openPicker = () => {
+    const el = ref.current
+    if (!el) return
+    // showPicker needs a user gesture and throws if the input can't take one;
+    // focusing is the honest fallback since the field is still typeable.
+    if (typeof el.showPicker === 'function') {
+      try {
+        el.showPicker()
+        return
+      } catch {
+        /* fall through */
+      }
+    }
+    el.focus()
+  }
+
+  return (
+    <div className="w-full">
+      <Label htmlFor={id} hint={hint}>{label}</Label>
+      <div className="relative">
+        <input
+          id={id}
+          ref={ref}
+          type="datetime-local"
+          value={toLocalInput(value)}
+          min={min !== undefined ? toLocalInput(min) : undefined}
+          onChange={(e) => {
+            const next = fromLocalInput(e.target.value)
+            if (Number.isFinite(next)) onChange(next)
+          }}
+          className={cn(CONTROL, 'date-field h-11 pr-12', invalid && 'border-rose focus:border-rose focus:ring-rose/12')}
+        />
+        <button
+          type="button"
+          onClick={openPicker}
+          aria-label={`Choose ${label.toLowerCase()} date and time`}
+          className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-fg-faint transition-colors hover:bg-panel-3 hover:text-fg"
+        >
+          <CalendarDays size={15} />
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export function Toggle({
   checked,

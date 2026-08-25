@@ -6,6 +6,7 @@ import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { MobileNav } from './MobileNav'
 import { CommandPalette } from './CommandPalette'
+import { NotificationCenter } from './NotificationCenter'
 import { Dashboard } from '@/views/Dashboard'
 import { Board } from '@/views/Board'
 import { Scoreboard } from '@/views/Scoreboard'
@@ -33,10 +34,10 @@ export function Shell() {
   const { view } = useUI()
 
   // Theme and motion preference live on <html> so the CSS token blocks and
-  // the reduced-motion override apply to portalled overlays too.
+  // the reduced-motion override apply to portalled overlays too. `color-scheme`
+  // rides along in the token blocks, which also themes browser-drawn controls.
   useEffect(() => {
     document.documentElement.classList.toggle('dark', prefs.theme === 'dark')
-    document.documentElement.style.colorScheme = prefs.theme
   }, [prefs.theme])
 
   useEffect(() => {
@@ -73,6 +74,7 @@ export function Shell() {
       <TaskDrawer />
       <ComposeTask />
       <CommandPalette />
+      <NotificationCenter />
     </div>
   )
 }

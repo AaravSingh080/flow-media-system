@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react'
-import { AlertTriangle, Download, LogOut, Repeat, Upload } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { AlertTriangle, Bell, Download, LogOut, Repeat, Upload, Volume2 } from 'lucide-react'
 import { useApp } from '@/store/AppStore'
 import { ROLES, ROLE_LIST, can } from '@/lib/permissions'
 import { digest } from '@/lib/storage'
+import { desktopPermission, playChime, requestDesktop, type Permission } from '@/lib/notify'
 import { fmtFullDate } from '@/lib/format'
 import { Avatar, RoleTag } from '@/components/ui/Avatar'
 import { Button, Panel, SectionTitle, Segmented } from '@/components/ui/primitives'
@@ -74,6 +75,8 @@ export function SettingsView() {
           </div>
         </div>
       </Panel>
+
+      <AlertSettings />
 
       <Panel>
         <SectionTitle hint="At least six characters">Change your password</SectionTitle>
@@ -215,6 +218,111 @@ export function SettingsView() {
         </p>
       </Modal>
     </div>
+  )
+}
+
+/* ------------------------------------------------------------------ *
+ * How arrivals reach you
+ * ------------------------------------------------------------------ */
+
+function AlertSettings() {
+  const { prefs, setPrefs } = useApp()
+  const toast = useToast()
+  const [permission, setPermission] = useState<Permission>('default')
+
+  useEffect(() => setPermission(desktopPermission()), [])
+
+  const enableDesktop = async (on: boolean) => {
+    if (!on) {
+      setPrefs({ desktopAlerts: false })
+      return
+    }
+    const result = await requestDesktop()
+    setPermission(result)
+    if (result === 'granted') {
+      setPrefs({ desktopAlerts: true })
+      toast({ tone: 'success', title: 'Desktop notifications on', body: 'They fire only while this tab is in the background.' })
+    } else {
+      setPrefs({ desktopAlerts: false })
+      toast({
+        tone: 'error',
+        title: result === 'unsupported' ? 'This browser has no notification API' : 'Notifications are blocked',
+        body:
+          result === 'denied'
+            ? 'Allow notifications for this site in your browser settings, then switch this back on.'
+            : 'The other channels still work.',
+      })
+    }
+  }
+
+  return (
+    <Panel>
+      <SectionTitle hint="What happens the moment work lands on you">
+        <span className="inline-flex items-center gap-1.5">
+          <Bell size={13} /> Alerts
+        </span>
+      </SectionTitle>
+
+      <div className="space-y-4">
+        <Toggle
+          checked={prefs.liveAlerts}
+          onChange={(v) => setPrefs({ liveAlerts: v })}
+          label="Show a card when something arrives"
+          description="Slides in over whatever you are doing and clears itself after a few seconds. Click it to open the task."
+        />
+
+        <div className="border-t border-line pt-4">
+          <Toggle
+            checked={prefs.soundAlerts}
+            onChange={(v) => {
+              setPrefs({ soundAlerts: v })
+              if (v) playChime('arrive')
+            }}
+            label="Play a chime"
+            description="Two short notes. New work and approvals sound different, so you can tell them apart without looking."
+          />
+          {prefs.soundAlerts && (
+            <div className="mt-2 flex flex-wrap gap-1.5 pl-12">
+              {(['arrive', 'good', 'warn'] as const).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => playChime(c)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-[11px] text-fg-faint transition-colors hover:border-line-strong hover:text-fg-muted"
+                >
+                  <Volume2 size={11} />
+                  {c === 'arrive' ? 'New work' : c === 'good' ? 'Approved' : 'Sent back'}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-line pt-4">
+          <Toggle
+            checked={prefs.desktopAlerts && permission === 'granted'}
+            onChange={(v) => void enableDesktop(v)}
+            label="Notify me outside the browser tab"
+            description="An operating-system notification, only while this tab is in the background. Your browser asks permission first."
+          />
+          {permission === 'denied' && (
+            <p className="mt-2 pl-12 text-[11px] leading-relaxed text-amber">
+              Your browser is blocking notifications for this site. Allow them in site settings, then switch this back on.
+            </p>
+          )}
+          {permission === 'unsupported' && (
+            <p className="mt-2 pl-12 text-[11px] text-fg-faint">This browser does not expose a notification API.</p>
+          )}
+        </div>
+      </div>
+
+      <p className="mt-4 rounded-xl bg-panel-2 px-3.5 py-3 text-[11.5px] leading-relaxed text-fg-muted">
+        To see it land: open Flow in a second tab, use <span className="text-fg">Switch role for a look</span> below to
+        become someone else in <em>this</em> tab, then assign work to whoever the other tab is showing. It arrives there
+        live, no refresh. The workspace is shared between tabs in this browser; each tab keeps its own signed-in account
+        until you reload it.
+      </p>
+    </Panel>
   )
 }
 

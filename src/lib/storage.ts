@@ -22,8 +22,12 @@ export function loadState(): AppState | null {
 
 let writeTimer: number | undefined
 
-/** Debounced — typing in a brief shouldn't hit disk on every keystroke. */
-export function saveState(state: AppState): void {
+/**
+ * Debounced — typing in a brief shouldn't hit disk on every keystroke.
+ * `onWritten` fires after the write lands, which is when other tabs can
+ * safely be told to re-read.
+ */
+export function saveState(state: AppState, onWritten?: () => void): void {
   if (writeTimer) window.clearTimeout(writeTimer)
   writeTimer = window.setTimeout(() => {
     try {
@@ -38,6 +42,7 @@ export function saveState(state: AppState): void {
         localStorage.removeItem(SESSION_KEY)
         sessionStorage.removeItem(SESSION_KEY)
       }
+      onWritten?.()
     } catch (err) {
       console.warn('[flow] could not persist state', err)
     }

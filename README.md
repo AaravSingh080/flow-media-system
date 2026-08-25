@@ -46,6 +46,15 @@ record on every render, so it cannot drift. Alongside it sits a reliability
 score per member — punctuality 40%, sign-off ratings 25%, throughput 20%,
 initiative 15%, with live overdue work penalised.
 
+**Notifications land, they don't just accumulate.** When work is assigned to
+you, four things can happen and each is switchable in Settings: a card slides
+in over whatever you're doing and clears itself after a few seconds, a short
+synthesised chime plays (new work, approvals and send-backs use different
+intervals, so you can tell them apart without looking), an OS notification
+fires if the tab is in the background, and the unread count appears in the tab
+title. Because the workspace is shared between tabs in one browser, a second
+tab picks up a new assignment live, with no refresh.
+
 **The assistant** answers from the same data every dashboard reads. Ask what is
 overdue, who has capacity, how many tasks somebody has completed, or what a
 person's delivery habits look like. It is a local intent engine, not a language
@@ -79,7 +88,7 @@ cannot do, it cannot see — gated nav items are absent, not disabled.
 - **⌘K command palette** over tasks, people and views, with any unmatched query
   handed to the assistant.
 - **Notifications** on assignment, hand-in, sign-off, comments and deadlines
-  crossing into the last 24 hours.
+  crossing into the last 24 hours — with an inbox that sorts unread first.
 - **Per-task threads** with text, voice and file replies.
 - **Light and dark themes**, plus an in-app reduce-motion switch that layers on
   top of the OS setting.
@@ -124,6 +133,7 @@ src/
 │  ├─ analytics.ts     stats, reliability, leaderboards — all derived, never stored
 │  ├─ assistant.ts     the local intent engine
 │  ├─ media.ts         IndexedDB blob store, object-URL cache, upload pipeline
+│  ├─ notify.ts        alert channels: chime, desktop, cross-tab delivery
 │  ├─ seed.ts          the demo studio
 │  └─ demoMedia.ts     procedural reference frames and synthetic voice notes
 ├─ store/              app state + persistence, UI navigation state
@@ -135,6 +145,15 @@ src/
 │  └─ layout/          shell, sidebar, topbar, command palette
 └─ views/              one file per tab
 ```
+
+### A note on the date fields
+
+Chromium draws the `datetime-local` calendar button as a fixed near-black icon.
+It stays black on a dark field even under `color-scheme: dark`, and the element
+ignores `filter` — `display` is one of the few properties it honours. So the
+native button is removed and `DateTimeField` draws its own, which is themeable
+and behaves the same everywhere. The input itself is still a real
+`datetime-local`, so typing and the OS picker both work.
 
 ### A note on the charts
 

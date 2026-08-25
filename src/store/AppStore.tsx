@@ -11,6 +11,7 @@ import {
 import { buildSeedState } from '@/lib/seed'
 import { hydrateDemoMedia } from '@/lib/demoMedia'
 import { clearAll, digest, loadSession, loadState, saveState } from '@/lib/storage'
+import { TAB_ID, broadcast, openChannel } from '@/lib/notify'
 import { deleteBlob } from '@/lib/media'
 import { uid, pad } from '@/lib/id'
 import { DAY } from '@/lib/format'
@@ -35,6 +36,10 @@ const DEFAULT_PREFS: Preferences = {
   reduceMotion: false,
   density: 'comfortable',
   boardMode: 'board',
+  liveAlerts: true,
+  soundAlerts: true,
+  // Off until the person grants OS permission, which we never ask for unprompted.
+  desktopAlerts: false,
 }
 
 export interface NewTaskInput {
@@ -120,9 +125,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  /**
+   * Adopting another tab's state must not immediately write and re-broadcast,
+   * or two tabs ping-pong forever.
+   */
+  const adopting = useRef(false)
+
   useEffect(() => {
-    saveState(state)
+    if (adopting.current) {
+      adopting.current = false
+      return
+    }
+    saveState(state, () => broadcast({ revision: Date.now(), origin: TAB_ID, at: Date.now() }))
   }, [state])
+
+  /**
+   * The workspace lives in one browser, so a second tab stands in for a
+   * second person. When the tab that assigned the work has finished
+   * writing, this one re-reads and picks up the change live — which is
+   * what makes a new assignment actually land rather than wait for a
+   * refresh. Last write wins; both tabs share the same record either way.
+   *
+   * The session stays local: another tab switching role must not drag
+   * this one along with it.
+   */
+  useEffect(
+    () =>
+      openChannel((msg) => {
+        if (msg.origin === TAB_ID) return
+        const remote = loadState()
+        if (!remote) return
+        adopting.current = true
+        setState((current) => ({ ...remote, session: current.session }))
+      }),
+    [],
+  )
 
   const me = useMemo(
     () => (state.session ? state.users.find((u) => u.id === state.session!.userId) ?? null : null),

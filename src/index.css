@@ -8,6 +8,8 @@
  * names only; no component reaches for a raw hex.
  * ------------------------------------------------------------------ */
 :root {
+  color-scheme: light;
+
   --c-bg: #f4f3ef;
   --c-bg-deep: #eae8e1;
   --c-panel: #ffffff;
@@ -17,7 +19,7 @@
   --c-line-strong: rgb(20 22 26 / 0.18);
   --c-fg: #14161a;
   --c-fg-muted: #5c6270;
-  --c-fg-faint: #8b909c;
+  --c-fg-faint: #767c88;
 
   /* Deep olive-lime: the bright lime used in dark mode only reaches
      1.68:1 on white, which fails as a chart mark and as a button fill.
@@ -42,6 +44,8 @@
 }
 
 .dark {
+  color-scheme: dark;
+
   --c-bg: #0a0b0d;
   --c-bg-deep: #070809;
   --c-panel: #101216;
@@ -145,6 +149,58 @@
 
   input, textarea {
     background: transparent;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Browser-drawn control parts
+   *
+   * `color-scheme` above covers most of it, but a few internals are
+   * painted from their own palette and come out near-black on a dark
+   * field. These are the ones that actually show.
+   * ------------------------------------------------------------------ */
+
+  ::-webkit-datetime-edit,
+  ::-webkit-datetime-edit-fields-wrapper,
+  ::-webkit-datetime-edit-text,
+  ::-webkit-datetime-edit-month-field,
+  ::-webkit-datetime-edit-day-field,
+  ::-webkit-datetime-edit-year-field,
+  ::-webkit-datetime-edit-hour-field,
+  ::-webkit-datetime-edit-minute-field,
+  ::-webkit-datetime-edit-ampm-field {
+    color: var(--c-fg);
+  }
+  ::-webkit-datetime-edit-text {
+    color: var(--c-fg-faint);
+  }
+
+  /* Firefox paints the option list from these, not from the parent. */
+  option,
+  optgroup {
+    background-color: var(--c-panel);
+    color: var(--c-fg);
+  }
+
+  /* Chrome autofill overrides both colours; put ours back. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--c-fg);
+    -webkit-box-shadow: 0 0 0 100px var(--c-panel-2) inset;
+    caret-color: var(--c-fg);
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
+  /* The stepper on number inputs is another near-black UA glyph. */
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
   }
 
   :focus-visible {
@@ -272,4 +328,18 @@ html[data-motion='reduced'] *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * The date-picker glyph
+ *
+ * Chromium draws this as a fixed near-black icon that stays black on a
+ * dark field even under `color-scheme: dark`, and it ignores `filter`
+ * on this pseudo-element — `display` is one of the few properties it
+ * does honour. So the native button is removed and DateTimeField draws
+ * its own, which is themeable and behaves the same in every browser.
+ * Unlayered on purpose: this must not lose a specificity race.
+ * ------------------------------------------------------------------ */
+.date-field::-webkit-calendar-picker-indicator {
+  display: none;
 }

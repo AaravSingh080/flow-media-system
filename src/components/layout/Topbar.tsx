@@ -9,6 +9,7 @@ import { Avatar, RoleTag } from '@/components/ui/Avatar'
 import { Button, Kbd } from '@/components/ui/primitives'
 import { cn } from '@/components/ui/cn'
 import { Wordmark } from './Sidebar'
+import { KIND_META } from './NotificationCenter'
 
 const TITLES: Record<string, { title: string; sub: string }> = {
   dashboard: { title: 'Overview', sub: 'Where the studio stands today' },
@@ -102,9 +103,14 @@ export function Topbar() {
           <Button variant="ghost" size="icon" onClick={() => setBellOpen((v) => !v)} aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}>
             <Bell size={16} />
             {unread > 0 && (
-              <span className="absolute right-1.5 top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose px-1 text-[9px] font-bold text-white">
-                {unread > 9 ? '9+' : unread}
-              </span>
+              <>
+                <span className="absolute right-1.5 top-1.5 h-4 min-w-4 animate-ping rounded-full bg-rose/40" />
+                {/* text-bg, not white: the dark-theme rose is light enough that
+                    white on it only reaches 2.7:1. */}
+                <span className="absolute right-1.5 top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose px-1 text-[9px] font-bold text-bg">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              </>
             )}
           </Button>
 
@@ -126,29 +132,54 @@ export function Topbar() {
                   )}
                 </div>
                 <div className="max-h-[380px] overflow-y-auto">
-                  {mine.length === 0 && <p className="px-4 py-10 text-center text-[13px] text-fg-faint">Nothing yet.</p>}
-                  {mine.slice(0, 20).map((n) => (
-                    <button
-                      key={n.id}
-                      onClick={() => {
-                        markRead(n.id)
-                        if (n.taskId) openTask(n.taskId)
-                        else if (n.initiativeId) go('initiatives')
-                        setBellOpen(false)
-                      }}
-                      className={cn(
-                        'flex w-full gap-3 border-b border-line px-4 py-3 text-left transition-colors last:border-0 hover:bg-panel-2',
-                        !n.read && 'bg-accent/4',
-                      )}
-                    >
-                      <span className={cn('mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full', n.read ? 'bg-line-strong' : 'bg-accent')} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] font-medium">{n.title}</span>
-                        <span className="mt-0.5 block truncate text-[11px] text-fg-faint">{n.body}</span>
-                        <span className="mt-1 block text-[10px] text-fg-faint">{relTime(n.at)}</span>
-                      </span>
-                    </button>
-                  ))}
+                  {mine.length === 0 && (
+                    <p className="px-4 py-10 text-center text-[13px] text-fg-faint">
+                      Nothing yet. New work, hand-ins and sign-offs land here.
+                    </p>
+                  )}
+                  {/* Unread first — the queue is a to-do list, not a diary. */}
+                  {[...mine]
+                    .sort((a, b) => Number(a.read) - Number(b.read) || b.at - a.at)
+                    .slice(0, 20)
+                    .map((n) => {
+                      const meta = KIND_META[n.kind] ?? KIND_META.assigned
+                      const Icon = meta.icon
+                      return (
+                        <button
+                          key={n.id}
+                          onClick={() => {
+                            markRead(n.id)
+                            if (n.taskId) openTask(n.taskId)
+                            else if (n.initiativeId) go('initiatives')
+                            setBellOpen(false)
+                          }}
+                          className={cn(
+                            'flex w-full gap-3 border-b border-line px-4 py-3 text-left transition-colors last:border-0 hover:bg-panel-2',
+                            !n.read && 'bg-accent/4',
+                          )}
+                        >
+                          <span
+                            className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg"
+                            style={{
+                              background: `color-mix(in oklab, ${meta.tone} 14%, transparent)`,
+                              color: meta.tone,
+                            }}
+                          >
+                            <Icon size={13} />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-1.5">
+                              <span className="truncate text-[13px] font-medium">{n.title}</span>
+                              {!n.read && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />}
+                            </span>
+                            <span className="mt-0.5 block truncate text-[11px] text-fg-faint">{n.body}</span>
+                            <span className="mt-1 block text-[10px] text-fg-faint">
+                              {meta.label} · {relTime(n.at)}
+                            </span>
+                          </span>
+                        </button>
+                      )
+                    })}
                 </div>
               </motion.div>
             )}

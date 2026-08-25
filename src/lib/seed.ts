@@ -1,7 +1,7 @@
 import { DAY, HOUR } from './format'
 import { uid, pad } from './id'
 import { digest } from './storage'
-import type { ActivityEntry, AppState, Initiative, Priority, Task, TaskStatus, User } from '@/types'
+import type { ActivityEntry, AppState, Initiative, Notification, Priority, Task, TaskStatus, User } from '@/types'
 
 /** Deterministic jitter — the demo workspace looks the same on every boot. */
 function mulberry32(seed: number) {
@@ -569,12 +569,87 @@ export function buildSeedState(now = Date.now()): AppState {
     }
   })
 
+  /**
+   * A little inbox history, so the bell means something on first run.
+   * Hand-ins waiting on the signed-in admin stay unread; everything else
+   * is already dealt with.
+   */
+  const notifications: Notification[] = []
+  const push = (n: Omit<Notification, 'id'>) => notifications.push({ ...n, id: uid('n') })
+
+  for (const task of tasks) {
+    if (task.status === 'in_review' && task.submittedAt) {
+      // Whoever can sign this off should see it waiting.
+      for (const admin of users.filter((u) => u.role === 'admin' && u.id !== task.assigneeId)) {
+        push({
+          userId: admin.id,
+          kind: 'submitted',
+          title: `${users.find((u) => u.id === task.assigneeId)?.name.split(' ')[0]} submitted ${task.code}`,
+          body: task.title,
+          taskId: task.id,
+          at: task.submittedAt,
+          read: false,
+        })
+      }
+    }
+    if (task.status === 'done' && task.approvedAt) {
+      push({
+        userId: task.assigneeId,
+        kind: 'approved',
+        title: `${task.code} approved — ${task.pointsAwarded ?? task.points} points`,
+        body: task.reviewNote ?? 'Signed off.',
+        taskId: task.id,
+        at: task.approvedAt,
+        read: true,
+      })
+    }
+    if (task.status === 'backlog' || task.status === 'in_progress') {
+      push({
+        userId: task.assigneeId,
+        kind: 'assigned',
+        title: `${users.find((u) => u.id === task.createdBy)?.name.split(' ')[0]} assigned you ${task.code}`,
+        body: task.title,
+        taskId: task.id,
+        at: task.createdAt,
+        read: task.status === 'in_progress',
+      })
+    }
+  }
+
+  for (const item of initiatives) {
+    if (item.status === 'pending') {
+      for (const admin of users.filter((u) => u.role === 'admin' && u.id !== item.proposedBy)) {
+        push({
+          userId: admin.id,
+          kind: 'submitted',
+          title: `${users.find((u) => u.id === item.proposedBy)?.name.split(' ')[0]} logged self-directed work`,
+          body: item.title,
+          initiativeId: item.id,
+          at: item.createdAt,
+          read: false,
+        })
+      }
+    } else if (item.status === 'approved') {
+      push({
+        userId: item.proposedBy,
+        kind: 'approved',
+        title: `${item.code} scored at ${item.points} points`,
+        body: item.decisionNote ?? item.title,
+        initiativeId: item.id,
+        at: item.decidedAt ?? item.createdAt,
+        read: true,
+      })
+    }
+  }
+
+  notifications.sort((a, b) => b.at - a.at)
+
   return {
     version: 1,
     users,
     tasks,
     initiatives,
-    notifications: [],
+    notifications: notifications.slice(0, 200),
     session: null,
     prefs: {},
     counters: { task: tasks.length, initiative: initiatives.length },

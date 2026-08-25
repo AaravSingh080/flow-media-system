@@ -3,10 +3,10 @@ import { AlertCircle, CalendarClock, Users } from 'lucide-react'
 import { useApp } from '@/store/AppStore'
 import { useUI } from '@/store/ui'
 import { ROLES, can } from '@/lib/permissions'
-import { DAY, fromLocalInput, toLocalInput } from '@/lib/format'
+import { DAY } from '@/lib/format'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/primitives'
-import { Input, Label, PointsField, Select, TagInput, Textarea } from '@/components/ui/Field'
+import { DateTimeField, Input, Label, PointsField, Select, TagInput, Textarea } from '@/components/ui/Field'
 import { useToast } from '@/components/ui/Toast'
 import { Avatar, RoleTag } from '@/components/ui/Avatar'
 import { Dropzone } from '@/components/media/Dropzone'
@@ -179,27 +179,15 @@ export function ComposeTask() {
         </div>
 
         <div className="grid gap-4 border-t border-line pt-5 sm:grid-cols-2">
-          <div>
-            <Label hint="when work can start">Starts</Label>
-            <input
-              type="datetime-local"
-              value={toLocalInput(startAt)}
-              onChange={(e) => setStartAt(fromLocalInput(e.target.value))}
-              className="h-11 w-full rounded-xl border border-line bg-panel-2 px-3.5 text-sm focus:border-accent focus:outline-none"
-            />
-          </div>
-          <div>
-            <Label hint={validDates ? `${Math.max(1, Math.round((dueAt - startAt) / DAY))} day window` : 'must be after the start'}>Due</Label>
-            <input
-              type="datetime-local"
-              value={toLocalInput(dueAt)}
-              onChange={(e) => setDueAt(fromLocalInput(e.target.value))}
-              className={cn(
-                'h-11 w-full rounded-xl border bg-panel-2 px-3.5 text-sm focus:outline-none',
-                validDates ? 'border-line focus:border-accent' : 'border-rose',
-              )}
-            />
-          </div>
+          <DateTimeField label="Starts" hint="when work can start" value={startAt} onChange={setStartAt} />
+          <DateTimeField
+            label="Due"
+            hint={validDates ? `${Math.max(1, Math.round((dueAt - startAt) / DAY))} day window` : 'must be after the start'}
+            value={dueAt}
+            onChange={setDueAt}
+            invalid={!validDates}
+            min={startAt}
+          />
           <div className="sm:col-span-2">
             <div className="flex flex-wrap gap-1.5">
               {[1, 2, 3, 7, 14].map((d) => (
